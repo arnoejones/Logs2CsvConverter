@@ -32,6 +32,14 @@ class FileNotFoundException(Exception):
         return error_string
 
 
+def strip_nonascii(b):
+    z = str(b.decode('ascii', errors='ignore'))
+    return z
+
+
+
+
+
 def list_to_tuple(listbox_contents):  # put in format the user interface can understand
     listbox_tuple = ()
     for item in listbox_contents:
@@ -64,16 +72,18 @@ def empty_dir(top):
 
 
 def convert_txt_to_csv(textfiles, output_file_name):
-
+    pat = re.compile('[_\n ]*(?P<info>\S+)\s+\|\s+(?P<dt>\S+)\s+(?P<tm>\S+)\s+\|\s+(?P<app_name>.+)\n(?P<msg>.+)')
+    line2 = ''
     for logfile in textfiles:
-        with open(logfile) as lfile:
-            if os.path.getsize(logfile) > 0:
-                try:
-                    text = lfile.read()
-                except:
-                    break  # sometimes there's a weird ascii char that won't translate.  Skip it.
+        if os.path.getsize(logfile) > 0:
+            with open(logfile, "rb") as log_file:
+                t = log_file.read()
+
+                nline = strip_nonascii(t)
+
                 match = re.findall(
-                    r"[_\n ]*(?P<info>\S+)\s+\|\s+(?P<dt>\S+)\s+(?P<tm>\S+)\s+\|\s+(?P<app_name>.+)\n(?P<msg>.+)", text)
+                    pat,
+                    nline)
                 df = pd.DataFrame(match)
                 df.columns = ['Log Level', 'Date', 'Time', 'App Name', 'Message']
 
