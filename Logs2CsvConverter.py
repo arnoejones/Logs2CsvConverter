@@ -57,7 +57,7 @@ def verify_path(path):
 
 
 def empty_dir(top):
-    if (top == '/' or top == "\\"):
+    if top == '/' or top == "\\":
         return
     else:
         for root, dirs, files in os.walk(top, topdown=False):
@@ -68,31 +68,38 @@ def empty_dir(top):
 
 
 def convert_txt_to_csv(textfiles, output_file_name):
-    pat = re.compile('[_\n ]*(?P<info>\S+)\s+\|\s+(?P<dt>\S+)\s+(?P<tm>\S+)\s+\|\s+(?P<app_name>.+)\n(?P<msg>.+)')
+    pat = re.compile(
+        '[_\n ]*(?P<info>\S+)\s+\|\s+(?P<dt>\S+)\s+(?P<tm>\S+)\s+\|\s+(?P<app_name>.+)\n(?P<msg>.+)')
 
     for logfile in textfiles:
         if os.path.getsize(logfile) > 0:
             sum = []
-            with open(logfile, "rb") as log_file: # rb = read, binary.  This is the big one.  Reading text is better
+            with open(logfile, "rb") as log_file:  # rb = read, binary.  This is the big one.  Reading text is better
                                                     # because it reads ascii.  If you know for sure that your log
                                                     # files will not contain binary data, then the command should
                                                     # look like: with open(logfile, "r") as log_file:
                 for line in log_file:
-                    ascii_data = line.decode("ascii", errors="ignore") #look for binary (non-ascii) and ignore
-                    sum.append(ascii_data)  # take the new, decoded lines and add to the sum list. Strings are immutable.
+                    # look for binary (non-ascii) and ignore
+                    ascii_data = line.decode("ascii", errors="ignore")
+                    # take the new, decoded lines and add to the sum list. Strings are immutable.
+                    sum.append(ascii_data)
                 str = ''.join(sum)  # turns a list into a string that we can regex against.
 
                 match = re.findall(pat, str)  # match is a list of tuples
 
                 # tuples are immutable, so we have to deconstruct them, make our changes, and reconstruct them.
-                tmp_list = []
-                for item in match:  # each list
-                    for tup in item:  # each tuple
-                        tmp_list.append(tup)  # list contains just items now, not tuples
+                # tmp_list = []
+                # for item in match:  # each list
+                #     for tup in item:  # each tuple
+                #         tmp_list.append(tup)  # list contains just items now, not tuples
+                tmp_list = [tup for item in match for tup in item]
 
                 for idx, l in enumerate(tmp_list):  # for each item in list
                     if '\r' in l:  # remove the crlf if found
-                        tmp_list[idx] = l.replace('\r', ' ')  # now it's a modified list of changed values, but not tuples
+                        # now it's a modified list of changed values, but not tuples
+                        tmp_list[idx] = l.replace('\r', ' ')
+
+
 
                 counter = 0
 
@@ -106,7 +113,7 @@ def convert_txt_to_csv(textfiles, output_file_name):
                     # there is probably and elegant, pythonic way to do this, but I'm not experienced enough yet, so
                     # here it is in agonizing detail.
                     if counter <= 5:  # this is some hard-coding I hate.  Normally I would try to dynamically figure
-                        #out how many categories there are, but you promised there are only 5, so I'm taking the path
+                        # out how many categories there are, but you promised there are only 5, so I'm taking the path
                         # of least-resistance :-)
                         temp_tuple_list.append(list_item)
                         counter += 1
@@ -122,7 +129,7 @@ def convert_txt_to_csv(textfiles, output_file_name):
                 # and adding the log file names.
                 df = pd.DataFrame(final_tuple_list)
                 df.columns = ['Log Level', 'Date', 'Time', 'App Name', 'Message']
-                #let's add a new column name
+                # let's add a new column name
                 df_log_name = pd.DataFrame(columns=['Log File Data Extracted From'])
                 # Fill that new column with the name of the source log file
                 df_log_name.loc[0] = logfile
@@ -131,20 +138,24 @@ def convert_txt_to_csv(textfiles, output_file_name):
 
                 try:
                     with open(output_file_name, 'a') as f:
-                        df3.to_csv(f, mode='a', header=True) # writing a dataframe to file is different the the
-                        #normal Python way.
+                        # writing a dataframe to file is different the the
+                        df3.to_csv(f, mode='a', header=True)
+                        # normal Python way.
                 except:
                     # You should get this error message if you have the file open in Excel while you are trying to
                     # write this file.  Excel (and others) put a lock on the file.  I won't know that until I get here.
-                    sg.Print("Something is wrong with opening the {} file. Is it in use?").format(output_file_name)
+                    sg.Print("Something is wrong with opening the {} file. Is it in use?").format(
+                        output_file_name)
 
     return True
+
 
 # https://pysimplegui.readthedocs.io/#how-do-i
 layout = [
     [sg.Text('Convert a Log File into a CSV File')],
     [sg.Text('Output CSV Filename'), sg.InputText('MyFileName.csv', do_not_clear=True)],
-    [sg.Text('CSV results directory', size=(15, 1)), sg.InputText(r"D:\Log2Csv\Log2CsvResults", do_not_clear=True)],
+    [sg.Text('CSV results directory', size=(15, 1)), sg.InputText(
+        r"D:\Log2Csv\Log2CsvResults", do_not_clear=True)],
     [sg.Text('Location of logfile(s)')],
     [sg.InputText(r'D:\Log2Csv\Log2CsvLogs', do_not_clear=True), sg.FolderBrowse()],
     [sg.Submit(button_color=('black', 'lightgreen')), sg.Exit(button_color=('black', 'Crimson'))]
@@ -179,7 +190,8 @@ while True:
             path_and_file_list.append(os.path.join(raw_logs_folder, log))
 
         # convert_txt_to_csv
-        convert_txt_to_csv(path_and_file_list, output_file_name=os.path.join(csv_target_dir, csv_filename))
+        convert_txt_to_csv(path_and_file_list, output_file_name=os.path.join(
+            csv_target_dir, csv_filename))
 
         sg.Popup('CSV files successfully created. OK to close app.')
 
